@@ -1,38 +1,56 @@
-import gradio as gr
-from azure.storage.blob import BlobServiceClient
 import os
+from knowledge_base import AzureKnowledgeBase
 
-# Configura las variables de entorno para Azure
-# Se recomienda usar secretos de Hugging Face
-AZURE_STORAGE_CONNECTION_STRING = os.environ["AZURE_STORAGE_CONNECTION_STRING"]
-CONTAINER_NAME = os.environ["CONTAINER_NAME"]
+# Cargar variables de entorno (para desarrollo local)
+from dotenv import load_dotenv
+load_dotenv()
 
-# Conexión a Azure Blob Storage
-blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
-container_client = blob_service_client.get_container_client(CONTAINER_NAME)
+# Inicializar la base de conocimiento de Azure
+try:
+    kb = AzureKnowledgeBase()
+except ValueError as e:
+    print(f"Error de configuración: {e}")
+    exit()
 
-# Lógica del chatbot
-def chatbot_response(user_input):
-    # Aquí iría tu lógica para procesar el input del usuario
-    # y buscar la respuesta en los documentos del blob.
-    # Por ejemplo, puedes descargar el archivo, procesarlo con un modelo, etc.
+def get_chatbot_response(user_input: str):
+    """
+    Función principal del chatbot para procesar una solicitud del usuario.
+    """
+    print(f"Procesando la pregunta: '{user_input}'")
 
-    # Ejemplo de cómo obtener un blob y leer su contenido
-    blob_client = container_client.get_blob_client("knowledge_base.txt")
-    blob_data = blob_client.download_blob().readall()
-    knowledge_base = blob_data.decode("utf-8")
+    # Paso 1: Buscar documentos relevantes en Azure AI Search
+    search_results = kb.search_documents(user_input)
+    
+    if not search_results:
+        return "Lo siento, no pude encontrar información relevante para tu pregunta."
 
-    # Lógica de búsqueda de respuesta (RAG, etc.)
-    response = f"Respuesta basada en la base de conocimiento: {knowledge_base[:100]}..." # Ejemplo
-    return response
+    # Usamos el primer resultado como ejemplo (puedes procesar varios)
+    first_result = search_results[0]
+    document_id = first_result.get('metadata_storage_name', '') # Asume que el ID está en este campo
+    
+    # Paso 2: Obtener el contenido del documento del Blob Storage
+    document_content = kb.get_document_content(document_id)
+    
+    if not document_content:
+        return "No pude recuperar el contenido del documento relevante."
 
-# Interfaz de Gradio
-iface = gr.Interface(
-    fn=chatbot_response,
-    inputs="text",
-    outputs="text",
-    title="Mi Chatbot de Azure",
-    description="Pregúntame cualquier cosa sobre mis documentos de conocimiento."
-)
+    # Paso 3: Combinar el input del usuario y el contenido del documento
+    # Esto es donde aplicarías tu lógica de modelo de lenguaje grande (LLM)
+    # Ejemplo simple (puedes usar OpenAI, Llama, etc. aquí)
+    print(f"Contenido relevante encontrado: {document_content[:200]}...")
+    
+    # Aquí iría la llamada a tu modelo de IA (ejemplo con un placeholder)
+    final_response = (f"Basado en la información encontrada en tus documentos ('{document_content[:100]}...'), "
+                      f"mi respuesta es: [Respuesta generada por el LLM].")
+    
+    return final_response
 
-iface.launch()
+# Ejemplo de uso
+if __name__ == "__main__":
+    while True:
+        user_question = input("Tú: ")
+        if user_question.lower() in ["exit", "salir"]:
+            break
+        
+        response = get_chatbot_response(user_question)
+        print(f"Chatbot: {response}\n")
