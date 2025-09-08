@@ -1,56 +1,80 @@
+import streamlit as st
 import os
-from knowledge_base import AzureKnowledgeBase
+from azure.storage.blob import BlobServiceClient
+import io
+import time # Para simular una respuesta
 
-# Cargar variables de entorno (para desarrollo local)
-from dotenv import load_dotenv
-load_dotenv()
+# --- Configuración de Streamlit y del Chatbot ---
+st.set_page_config(page_title="Mi Chatbot de Documentos", page_icon="🤖")
 
-# Inicializar la base de conocimiento de Azure
+st.title("🤖 Chatbot de Documentos")
+st.write("¡Hola! Soy un chatbot entrenado con tus documentos. Hazme una pregunta.")
+# 
+
+# --- Configuración de Variables de Entorno y Conexión a Azure ---
+# En Streamlit Cloud, las variables de entorno se configuran como 'secrets'.
+# Aquí accedemos a ellas a través de st.secrets.
+# NO subas el archivo .env a GitHub.
 try:
-    kb = AzureKnowledgeBase()
-except ValueError as e:
-    print(f"Error de configuración: {e}")
-    exit()
+    connection_string = st.secrets["AZURE_STORAGE_CONNECTION_STRING"]
+    container_name = st.secrets["AZURE_CONTAINER_NAME"]
 
-def get_chatbot_response(user_input: str):
+    # Conectar al servicio de Azure Blob Storage
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+    container_client = blob_service_client.get_container_client(container_name)
+    
+    # Aquí puedes listar los archivos si quieres
+    blob_list = container_client.list_blobs()
+    #st.sidebar.title("Documentos Cargados:")
+    #for blob in blob_list:
+    #    st.sidebar.text(blob.name)
+
+except KeyError:
+    st.error("Error: Las variables de entorno de Azure no están configuradas. Por favor, revisa tus 'secrets' en Streamlit Cloud.")
+    st.stop()
+except Exception as e:
+    st.error(f"Error al conectar con Azure Blob Storage: {e}")
+    st.stop()
+
+# --- Lógica del Chatbot ---
+def get_chatbot_response(prompt, documents):
     """
-    Función principal del chatbot para procesar una solicitud del usuario.
+    Esta función simula la lógica de tu chatbot.
+    Reemplaza esto con tu código real de chatbot.
     """
-    print(f"Procesando la pregunta: '{user_input}'")
+    # Aquí es donde iría tu lógica de conexión con los modelos de IA
+    # y la búsqueda de conocimiento en los documentos.
+    # Por ejemplo, con LangChain, OpenAI, etc.
 
-    # Paso 1: Buscar documentos relevantes en Azure AI Search
-    search_results = kb.search_documents(user_input)
-    
-    if not search_results:
-        return "Lo siento, no pude encontrar información relevante para tu pregunta."
+    # Simulación de carga y procesamiento
+    time.sleep(2) 
 
-    # Usamos el primer resultado como ejemplo (puedes procesar varios)
-    first_result = search_results[0]
-    document_id = first_result.get('metadata_storage_name', '') # Asume que el ID está en este campo
-    
-    # Paso 2: Obtener el contenido del documento del Blob Storage
-    document_content = kb.get_document_content(document_id)
-    
-    if not document_content:
-        return "No pude recuperar el contenido del documento relevante."
+    # Simulación de respuesta
+    response = f"Gracias por tu pregunta: **{prompt}**. Actualmente estoy procesando la información de tus documentos para darte una respuesta completa. ¡Vuelve pronto!"
+    return response
 
-    # Paso 3: Combinar el input del usuario y el contenido del documento
-    # Esto es donde aplicarías tu lógica de modelo de lenguaje grande (LLM)
-    # Ejemplo simple (puedes usar OpenAI, Llama, etc. aquí)
-    print(f"Contenido relevante encontrado: {document_content[:200]}...")
-    
-    # Aquí iría la llamada a tu modelo de IA (ejemplo con un placeholder)
-    final_response = (f"Basado en la información encontrada en tus documentos ('{document_content[:100]}...'), "
-                      f"mi respuesta es: [Respuesta generada por el LLM].")
-    
-    return final_response
+# --- Historial de Chat y UI de Streamlit ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-# Ejemplo de uso
-if __name__ == "__main__":
-    while True:
-        user_question = input("Tú: ")
-        if user_question.lower() in ["exit", "salir"]:
-            break
-        
-        response = get_chatbot_response(user_question)
-        print(f"Chatbot: {response}\n")
+# Mostrar mensajes previos
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Manejar la entrada del usuario
+if prompt := st.chat_input("¿Qué deseas saber sobre los documentos?"):
+    # Agregar el mensaje del usuario al historial
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # Obtener respuesta del chatbot
+    with st.chat_message("assistant"):
+        with st.spinner("Procesando tu solicitud..."):
+            # Llama a tu función real aquí
+            response = get_chatbot_response(prompt, None) 
+            st.markdown(response)
+
+    # Agregar la respuesta del asistente al historial
+    st.session_state.messages.append({"role": "assistant", "content": response})
