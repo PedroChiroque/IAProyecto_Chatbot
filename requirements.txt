@@ -1,3 +1,2 @@
+streamlit
 azure-storage-blob
-azure-search-documents
-python-dotenv  # Útil para la configuración de entorno local
