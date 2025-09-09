@@ -6,7 +6,7 @@ from openai import RateLimitError, APIError, APIConnectionError
 
 # --- Configuración de Streamlit ---
 st.set_page_config(page_title="Chatbot del Socio Comercial", page_icon="🤖")
-st.title("🤖 Chatbot de Documentos")
+st.title("🤖 Chatbot del Socio Comercial")
 st.write("¡Hola! Soy un chatbot entrenado con tus documentos. Hazme una pregunta.")
 
 # --- Configuración de Variables de Entorno y Conexión ---
