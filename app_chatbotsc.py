@@ -37,7 +37,7 @@ def get_chatbot_response(prompt, messages):
     """
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",  # Puedes cambiar a "gpt-4" si tienes acceso
+            model="gpt-5-mini",  # Puedes cambiar a "gpt-4" si tienes acceso
             messages=[
                 {"role": "system", "content": "Eres un asistente amigable y útil."},
                 *messages[-5:]  # Solo últimos 5 mensajes
