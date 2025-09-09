@@ -48,7 +48,7 @@ def get_chatbot_response(prompt, messages):
     # Este código es solo un ejemplo de conexión directa con la API.
     
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo", # Puedes usar otros modelos, como "gpt-4" gpt-3.5-turbo
+        model="gpt-5-mini", # Puedes usar otros modelos, como "gpt-4" gpt-3.5-turbo
         messages=[
             {"role": "system", "content": "Eres un asistente amigable y útil."},
             *messages # El asterisco expande el historial de mensajes
