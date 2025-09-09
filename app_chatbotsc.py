@@ -33,15 +33,11 @@ except Exception as e:
 
 # --- Lógica del Chatbot (Conexión a OpenAI) ---
 def get_chatbot_response(prompt, messages):
-    """
-    Esta función se conecta a la API de OpenAI para obtener una respuesta.
-    El historial de mensajes se envía para mantener el contexto de la conversación.
-    """
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",  # O usa "gpt-4" si tienes acceso
+    response = openai.ChatCompletion(
+        model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "Eres un asistente amigable y útil."},
-            *messages  # El historial de mensajes
+            *messages
         ]
     )
     return response.choices[0].message.content
