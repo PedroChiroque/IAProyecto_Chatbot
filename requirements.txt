@@ -1,3 +1,3 @@
 streamlit
 azure-storage-blob
-openai
+openai==0.28
